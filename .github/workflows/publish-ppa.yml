@@ -49,10 +49,15 @@ jobs:
     if: github.event_name == 'push' || github.event.inputs.nightly-build == 'false' && github.event.inputs.distro-codename == ''
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+
+      - name: Setup latest CMake
+        uses: jwlawson/actions-setup-cmake@v2
 
       - name: Update package repositories
-        run: sudo apt-get update
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
 
       - name: Install libraries
         run: |
@@ -61,10 +66,12 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt-get install -y cmake dh-make devscripts build-essential lintian
+          sudo apt-get install -y cmake dh-make devscripts build-essential lintian g++-15
 
       - name: Build and make release
         run: |
+          export CC=gcc-15
+          export CXX=g++-15
           bash ${{ github.workspace }}/release.sh
 
       - name: Upload workflow artifacts
@@ -120,7 +127,7 @@ jobs:
     if: github.event.inputs.nightly-build == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -129,7 +136,9 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
 
       - name: Update package repositories
-        run: sudo apt-get update
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
 
       - name: Install libraries
         run: |
@@ -138,10 +147,12 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt-get install -y cmake dh-make devscripts build-essential lintian
+          sudo apt-get install -y cmake dh-make devscripts build-essential lintian g++-15
 
       - name: Build and make nightly release
         run: |
+          export CC=gcc-15
+          export CXX=g++-15
           bash ${{ github.workspace }}/release.sh nightly
 
       - name: Upload workflow artifacts
@@ -159,7 +170,7 @@ jobs:
           if [ "$LAST_TAG" = "HEAD" ]; then
             COMMITS=0
           else
-            TAG_TS=$(git show -s --format=%ct "$LAST_TAG")
+            TAG_TS=$(git log -1 --format=%ct "$LAST_TAG")
             COMMITS=$(git rev-list --count --since=$((TAG_TS+1)) HEAD 2>/dev/null || echo 0)
           fi
           LAST_TAG_CLEAN=${LAST_TAG#v}
@@ -224,13 +235,18 @@ jobs:
     if: github.event.inputs.distro-codename != '' && github.event.inputs.nightly-build == 'false'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Setup latest CMake
+        uses: jwlawson/actions-setup-cmake@v2
+
       - name: Update package repositories
-        run: apt-get update
+        run: |
+          add-apt-repository ppa:ubuntu-toolchain-r/test
+          apt-get update
 
       - name: Install libraries
         run: |
@@ -239,10 +255,12 @@ jobs:
 
       - name: Install build tools
         run: |
-          DEBIAN_FRONTEND=noninteractive apt-get install -y cmake dh-make devscripts build-essential lintian wget rpm pkg-config
+          DEBIAN_FRONTEND=noninteractive apt-get install -y cmake dh-make devscripts build-essential lintian g++-15 wget rpm pkg-config
 
       - name: Build and make ${{ github.event.inputs.distro-os }} ${{ matrix.codename }} release
         run: |
+          export CC=gcc-15
+          export CXX=g++-15
           bash /__w/btop/btop/release.sh nightly
 
       - name: Upload workflow artifacts

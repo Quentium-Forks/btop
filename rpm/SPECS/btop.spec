@@ -21,7 +21,8 @@ C++ version and continuation of bashtop and bpytop.
 cmake -S . -B build \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
     -DCMAKE_BUILD_TYPE=Release \
-    -DBTOP_GPU=ON
+    -DBTOP_GPU=ON \
+    -DBUILD_TESTING=OFF
 
 cmake --build build -j $(nproc)
 

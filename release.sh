@@ -9,7 +9,7 @@ export VERSION=$VERSION
 rm -rf release build rpm/BUILDROOT rpm/*RPMS rpm/SOURCES
 
 # build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBTOP_GPU=ON -DCMAKE_INSTALL_PREFIX=/usr
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBTOP_GPU=ON -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=/usr
 cmake --build build -j $(nproc)
 strip -s build/btop
 
@@ -24,7 +24,7 @@ if [ "$1" == "nightly" ]; then
     if [ "$LAST_TAG" = "HEAD" ]; then
         COMMITS=0
     else
-        TAG_TS=$(git show -s --format=%ct "$LAST_TAG")
+        TAG_TS=$(git log -1 --format=%ct "$LAST_TAG")
         COMMITS=$(git rev-list --count --since=$((TAG_TS + 1)) HEAD 2> /dev/null || echo 0)
     fi
     echo "Build number: $COMMITS"
@@ -79,7 +79,7 @@ if [ -z "$USER" ]; then
 fi
 dh_make --createorig --indep --yes
 # Force CMake install step to be included in PATH for debuild
-debuild --set-envvar=PATH="$PATH" --no-lintian -us -uc
+debuild --set-envvar=PATH="$PATH" --set-envvar=CC="${CC:-gcc-15}" --set-envvar=CXX="${CXX:-g++-15}" --no-lintian -us -uc
 cd ../..
 
 # rpm package
