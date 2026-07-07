@@ -1,0 +1,302 @@
+name: Build Btop Application
+
+on:
+  workflow_dispatch:
+    inputs:
+      nightly-build:
+        description: "Nightly build"
+        type: boolean
+        required: true
+        default: false
+      distro-os:
+        description: "Distro OS build (ignored if distro codename is empty)"
+        type: choice
+        required: true
+        default: ubuntu
+        options:
+          - ubuntu
+          - debian
+      distro-codename:
+        description: "Distro codename (or version) build"
+        type: string
+        required: false
+        default: ""
+      publish:
+        description: "Publish to PPA"
+        type: boolean
+        required: true
+        default: false
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build:
+    name: Build App
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, ubuntu-22.04, ubuntu-22.04-arm]
+        include:
+          - os: ubuntu-24.04
+            codename: noble
+          - os: ubuntu-24.04-arm
+            codename: noble-arm
+          - os: ubuntu-22.04
+            codename: jammy
+          - os: ubuntu-22.04-arm
+            codename: jammy-arm
+    runs-on: ${{ matrix.os }}
+    if: github.event_name == 'push' || github.event.inputs.nightly-build == 'false' && github.event.inputs.distro-codename == ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Update package repositories
+        run: sudo apt-get update
+
+      - name: Install libraries
+        run: |
+          sudo apt-get install -y lowdown
+          sudo apt-get install -y libfuse2
+
+      - name: Install build tools
+        run: |
+          sudo apt-get install -y cmake dh-make devscripts build-essential lintian
+
+      - name: Build and make release
+        run: |
+          bash ${{ github.workspace }}/release.sh
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: btop-${{ matrix.codename }}
+          path: |
+            ${{ github.workspace }}/release/btop_*.deb
+            ${{ github.workspace }}/release/btop-*.rpm
+            ${{ github.workspace }}/release/btop-*.AppImage
+
+      - name: Update debian files
+        run: |
+          sed -i "s/^Architecture:\s\+.*$/Architecture: any/g" ${{ github.workspace }}/debian/control
+
+      - name: Display debian folder
+        run: |
+          echo "Debian folder content:"
+          ls -la ${{ github.workspace }}/debian/
+          echo "Release folder content:"
+          ls -la ${{ github.workspace }}/release/
+          echo "Control file content:"
+          cat ${{ github.workspace }}/debian/control
+          echo "Changelog file content:"
+          cat ${{ github.workspace }}/debian/changelog
+
+      - name: Publish PPA package
+        uses: yuezk/publish-ppa-package@main
+        if: matrix.codename == 'jammy'
+        with:
+          tarball: ${{ github.workspace }}/release/btop-*.tar.gz
+          debian_dir: ${{ github.workspace }}/debian/
+          repository: "quentiumyt/btop"
+          deb_email: "pro@quentium.fr"
+          deb_fullname: "Quentin Lienhardt"
+          gpg_private_key: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.PPA_GPG_PASSPHRASE }}
+          series: "jammy noble resolute"
+          new_version_template: "{VERSION}-{REVISION}+{SERIES}"
+          keep_changelog: true
+
+  nightly-build:
+    name: Build Nightly App
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        include:
+          - os: ubuntu-24.04
+            codename: noble
+          - os: ubuntu-24.04-arm
+            codename: noble-arm
+    runs-on: ${{ matrix.os }}
+    if: github.event.inputs.nightly-build == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup latest CMake
+        uses: jwlawson/actions-setup-cmake@v2
+
+      - name: Update package repositories
+        run: sudo apt-get update
+
+      - name: Install libraries
+        run: |
+          sudo apt-get install -y lowdown
+          sudo apt-get install -y libfuse2
+
+      - name: Install build tools
+        run: |
+          sudo apt-get install -y cmake dh-make devscripts build-essential lintian
+
+      - name: Build and make nightly release
+        run: |
+          bash ${{ github.workspace }}/release.sh nightly
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: btop-nightly-${{ matrix.codename }}
+          path: |
+            ${{ github.workspace }}/release/btop-nightly_*.deb
+            ${{ github.workspace }}/release/btop-nightly-*.rpm
+            ${{ github.workspace }}/release/btop-nightly-*.AppImage
+
+      - name: Get commit count
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD")
+          if [ "$LAST_TAG" = "HEAD" ]; then
+            COMMITS=0
+          else
+            TAG_TS=$(git show -s --format=%ct "$LAST_TAG")
+            COMMITS=$(git rev-list --count --since=$((TAG_TS+1)) HEAD 2>/dev/null || echo 0)
+          fi
+          LAST_TAG_CLEAN=${LAST_TAG#v}
+          echo "last_tag=$LAST_TAG_CLEAN" >> $GITHUB_ENV
+          echo "commit_count=$COMMITS" >> $GITHUB_ENV
+
+      - name: Update debian files
+        run: |
+          sed -i "s/${{ env.last_tag }}-/${{ env.last_tag }}+${{ env.commit_count }}-/g" ${{ github.workspace }}/debian/changelog
+          sed -i "s/^btop/btop-nightly/g" ${{ github.workspace }}/debian/changelog
+          sed -i "s/ btop$/ btop-nightly/g" ${{ github.workspace }}/debian/control
+          sed -i "s/Recommends: systemd/Provides: btop\nRecommends: systemd/g" ${{ github.workspace }}/debian/control
+          sed -i "s/Recommends: systemd/Conflicts: btop\nRecommends: systemd/g" ${{ github.workspace }}/debian/control
+          sed -i "s/Recommends: systemd/Replaces: btop\nRecommends: systemd/g" ${{ github.workspace }}/debian/control
+          sed -i "s/^Architecture:\s\+.*$/Architecture: any/g" ${{ github.workspace }}/debian/control
+          REVISION=$(grep -oP '\-\d+' debian/changelog | head -n 1 | cut -d '-' -f 2)
+          echo "revision=$REVISION" >> $GITHUB_ENV
+
+      - name: Display debian folder
+        run: |
+          echo "Debian folder content:"
+          ls -la ${{ github.workspace }}/debian/
+          echo "Release folder content:"
+          ls -la ${{ github.workspace }}/release/
+          echo "Control file content:"
+          cat ${{ github.workspace }}/debian/control
+          echo "Changelog file content:"
+          cat ${{ github.workspace }}/debian/changelog
+
+      - name: Publish PPA package
+        uses: yuezk/publish-ppa-package@main
+        if: github.event.inputs.publish == 'true' && !contains(matrix.codename, 'arm')
+        with:
+          tarball: ${{ github.workspace }}/release/btop-nightly-*.tar.gz
+          debian_dir: ${{ github.workspace }}/debian/
+          repository: "quentiumyt/btop"
+          deb_email: "pro@quentium.fr"
+          deb_fullname: "Quentin Lienhardt"
+          gpg_private_key: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.PPA_GPG_PASSPHRASE }}
+          series: "jammy noble resolute"
+          revision: ${{ env.revision }}
+          new_version_template: "{VERSION}-{REVISION}+{SERIES}"
+          keep_changelog: true
+
+  distro-build:
+    name: Build Distro App
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        include:
+          - os: ubuntu-24.04
+            codename: ${{ github.event.inputs.distro-codename }}
+            image: ${{ github.event.inputs.distro-os }}
+          - os: ubuntu-24.04-arm
+            codename: ${{ github.event.inputs.distro-codename }}-arm
+            image: arm64v8/${{ github.event.inputs.distro-os }}
+    runs-on: ${{ matrix.os }}
+    container:
+      image: ${{ matrix.image }}:${{ github.event.inputs.distro-codename }}
+      options: --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined
+    if: github.event.inputs.distro-codename != '' && github.event.inputs.nightly-build == 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Update package repositories
+        run: apt-get update
+
+      - name: Install libraries
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y lowdown
+          DEBIAN_FRONTEND=noninteractive apt-get install -y libfuse2
+
+      - name: Install build tools
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y cmake dh-make devscripts build-essential lintian wget rpm pkg-config
+
+      - name: Build and make ${{ github.event.inputs.distro-os }} ${{ matrix.codename }} release
+        run: |
+          bash /__w/btop/btop/release.sh nightly
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: btop-distro-${{ matrix.codename }}
+          path: |
+            /__w/btop/btop/release/btop-nightly_*.deb
+            /__w/btop/btop/release/btop-nightly-*.rpm
+            /__w/btop/btop/release/btop-nightly-*.AppImage
+
+      - name: Get commit count
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD")
+          COMMITS=0
+          LAST_TAG_CLEAN=${LAST_TAG#v}
+          echo "last_tag=$LAST_TAG_CLEAN" >> $GITHUB_ENV
+          echo "commit_count=$COMMITS" >> $GITHUB_ENV
+
+      - name: Update debian files
+        run: |
+          sed -i "s/${{ env.last_tag }}-/${{ env.last_tag }}+${{ env.commit_count }}-/g" /__w/btop/btop/debian/changelog
+          sed -i "s/^btop/btop-nightly/g" /__w/btop/btop/debian/changelog
+          sed -i "s/ btop$/ btop-nightly/g" /__w/btop/btop/debian/control
+          sed -i "s/Recommends: systemd/Provides: btop\nRecommends: systemd/g" /__w/btop/btop/debian/control
+          sed -i "s/Recommends: systemd/Conflicts: btop\nRecommends: systemd/g" /__w/btop/btop/debian/control
+          sed -i "s/Recommends: systemd/Replaces: btop\nRecommends: systemd/g" /__w/btop/btop/debian/control
+          sed -i "s/^Architecture:\s\+.*$/Architecture: any/g" /__w/btop/btop/debian/control
+          REVISION=$(grep -oP '\-\d+' debian/changelog | head -n 1 | cut -d '-' -f 2)
+          echo "revision=$REVISION" >> $GITHUB_ENV
+
+      - name: Display debian folder
+        run: |
+          echo "Debian folder content:"
+          ls -la /__w/btop/btop/debian/
+          echo "Release folder content:"
+          ls -la /__w/btop/btop/release/
+          echo "Control file content:"
+          cat /__w/btop/btop/debian/control
+          echo "Changelog file content:"
+          cat /__w/btop/btop/debian/changelog
+
+      - name: Publish PPA package
+        uses: yuezk/publish-ppa-package@main
+        if: github.event.inputs.publish == 'true' && !contains(matrix.codename, 'arm')
+        with:
+          tarball: /__w/btop/btop/release/btop-nightly-*.tar.gz
+          debian_dir: /__w/btop/btop/debian/
+          repository: "quentiumyt/btop"
+          deb_email: "pro@quentium.fr"
+          deb_fullname: "Quentin Lienhardt"
+          gpg_private_key: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.PPA_GPG_PASSPHRASE }}
+          series: ${{ github.event.inputs.distro-codename }}
+          revision: ${{ env.revision }}
+          new_version_template: "{VERSION}-{REVISION}+{SERIES}"
+          keep_changelog: true

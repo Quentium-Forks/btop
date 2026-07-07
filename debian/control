@@ -1,0 +1,19 @@
+Source: btop
+Section: utils
+Priority: optional
+Maintainer: Quentin Lienhardt <pro@quentium.fr>
+Build-Depends:
+ cmake,
+ debhelper (>= 13),
+ lowdown
+Standards-Version: 4.7.4
+Rules-Requires-Root: no
+Vcs-Browser: https://github.com/Quentium-Forks/btop
+Vcs-Git: https://github.com/Quentium-Forks/btop.git
+Homepage: https://github.com/Quentium-Forks/btop
+
+Package: btop
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: systemd
+Description: Resource monitor that shows usage and stats for processor, memory, disks, network and processes.

@@ -90,12 +90,16 @@ execute_process(
   OUTPUT_VARIABLE GIT_COMMIT
   OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 set(CONFIGURE_COMMAND
-    "cmake -DBTOP_STATIC=${BTOP_STATIC} -DBTOP_GPU=${BTOP_GPU}"
+  "cmake -DBTOP_STATIC=${BTOP_STATIC} -DBTOP_GPU=${BTOP_GPU}"
 )
 get_filename_component(CXX_COMPILER_BASENAME "${CMAKE_CXX_COMPILER}" NAME)
 set(COMPILER "${CXX_COMPILER_BASENAME}")
 set(COMPILER_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h @ONLY IMMEDIATE)
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/btop.metainfo.xml.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/desktop/io.github.aristocratos.btop.metainfo.xml"
+  @ONLY IMMEDIATE)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 include(CheckCXXSourceCompiles)
@@ -200,7 +204,7 @@ endif()
 
 if(APPLE)
   target_link_libraries(libbtop
-      $<LINK_LIBRARY:FRAMEWORK,CoreFoundation> $<LINK_LIBRARY:FRAMEWORK,IOKit>
+    $<LINK_LIBRARY:FRAMEWORK,CoreFoundation> $<LINK_LIBRARY:FRAMEWORK,IOKit>
   )
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64" AND BTOP_GPU)
     target_compile_definitions(libbtop PUBLIC GPU_SUPPORT)
@@ -213,7 +217,7 @@ if(APPLE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "MidnightBSD")
   # Avoid version mismatch for libstdc++ when a specific version of GCC is installed and not the
   # default one since all use the default ones RPATH
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     string(REGEX MATCH "^[0-9]+" GCC_VERSION_MAJOR "${CMAKE_CXX_COMPILER_VERSION}")
     set_target_properties(btop PROPERTIES
       INSTALL_RPATH "/usr/local/lib/gcc${GCC_VERSION_MAJOR}"
@@ -269,6 +273,7 @@ endif()
 
 install(TARGETS btop RUNTIME)
 install(FILES "btop.desktop" DESTINATION "share/applications")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/desktop/io.github.aristocratos.btop.metainfo.xml" DESTINATION "share/metainfo")
 install(FILES "Img/icon.png" DESTINATION "share/icons/hicolor/48x48/apps" RENAME "btop.png")
 install(FILES "Img/icon.svg" DESTINATION "share/icons/hicolor/scalable/apps" RENAME "btop.svg")
 install(DIRECTORY "themes" DESTINATION "share/btop")

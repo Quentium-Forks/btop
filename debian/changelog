@@ -1,0 +1,36 @@
+btop (1.4.7-1) stable; urgency=medium
+
+  * Process following and following mode improvements
+  * Add Apple Silicon GPU support via IOReport API
+  * add Kanagawa Dragon theme
+  * Add twilight theme
+  * Add Swap upload/download speed graph option, Fix network graphs overlap
+  * Add Flexoki dark and light themes
+  * Menu option to disable presets
+  * Create orange.theme
+  * Add E hotkey to collapse/expand all processes in tree mode
+  * Fix restore Apple Silicon temp reporting on M2 Pro
+  * Fix regression from a switch to kIOMainPortDefault
+  * Fix hide and info buttons
+  * Fix mouse mapping for process kill buttons with vim keys enabled
+  * Fix kill buttons
+  * following mode fixes
+  * Fixes and Improvements for Pause and Follow modes
+  * Fix remove unused asprintf implementation function
+  * Fix remove busy waiting when checking runner thread state
+  * Update clock with preset change or show/hide box
+  * Tweaked RX/TX collection and drawing, Fix -Wparentheses warning
+  * Fix mem bottom border when net is not shown
+  * Fix force_tty menu option sets TTY mode on start
+  * Fix accumulate pwr_usage into pwr_total instead of mem_total in Gpu::collect()
+  * Fix read GPU/VRAM clocks when ROCm SMI reports version 1.x
+  * Fix render a non-ascii chars in proc list
+  * fix CPU mib queries for OpenBSD, only display online CPUs in output
+  * Fix correctly map amd zen cpu core temps
+  * Fix restore Intel Mac CPU temperature fallback
+  * Fix Use SVG features compatible with Qt SVG Tiny 1.1
+  * Update widechar detection and fix replace_ascii_control() removing wide characters
+  * Fix cpu watt overflow in cpu box + division by zero fix for cpu.temp_max
+  * Fixed missing CPU package temperature color (numeric value)
+
+ -- Quentin Lienhardt <pro@quentium.fr>  Wed, 08 Jul 2026 15:00:00 +0100

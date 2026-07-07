@@ -50,6 +50,7 @@ stage/
 btop.1
 
 build
+release
 bin
 btop
 /obj/
@@ -88,3 +89,10 @@ CMakeUserPresets.json
 
 # CLion
 cmake-build-*
+
+rpm/BUILDROOT/
+rpm/*RPMS/
+rpm/SOURCES/
+rpm/SPECS/*-nightly.spec
+
+*.AppImage
