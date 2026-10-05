@@ -3,11 +3,9 @@ Section: utils
 Priority: optional
 Maintainer: Quentin Lienhardt <pro@quentium.fr>
 Build-Depends:
- cmake (>= 3.25),
- gcc-15,
- g++-15,
+ cmake,
  debhelper (>= 13),
- lowdown
+ lowdown,
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
 Vcs-Browser: https://github.com/Quentium-Forks/btop
