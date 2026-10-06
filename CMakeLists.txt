@@ -74,7 +74,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
   target_sources(libbtop PRIVATE src/openbsd/btop_collect.cpp src/openbsd/sysctlbyname.cpp)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
   target_sources(libbtop PRIVATE src/netbsd/btop_collect.cpp)
-elseif(LINUX)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_sources(libbtop PRIVATE src/linux/btop_collect.cpp)
   if(BTOP_GPU)
     add_subdirectory(src/linux/intel_gpu_top)
@@ -165,7 +165,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(libbtop Threads::Threads)
 
 # Enable GPU support
-if(LINUX AND BTOP_GPU)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND BTOP_GPU)
   target_compile_definitions(libbtop PUBLIC GPU_SUPPORT)
 
   if(BTOP_RSMI_STATIC)
