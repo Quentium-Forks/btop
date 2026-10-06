@@ -79,7 +79,7 @@ if [ -z "$USER" ]; then
 fi
 dh_make --createorig --indep --yes
 # Force CMake install step to be included in PATH for debuild
-debuild --set-envvar=PATH="$PATH" --no-lintian -us -uc
+debuild --set-envvar=PATH="$PATH" --set-envvar=CC="${CC:-gcc-15}" --set-envvar=CXX="${CXX:-g++-15}" --no-lintian -us -uc
 cd ../..
 
 # rpm package
