@@ -4,6 +4,8 @@ Priority: optional
 Maintainer: Quentin Lienhardt <pro@quentium.fr>
 Build-Depends:
  cmake,
+ gcc-15,
+ g++-15,
  debhelper (>= 13),
  lowdown,
 Standards-Version: 4.7.4
