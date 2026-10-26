@@ -35,8 +35,20 @@ jobs:
     name: Build App
     strategy:
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm, ubuntu-22.04, ubuntu-22.04-arm]
+        os:
+          [
+            ubuntu-26.04,
+            ubuntu-26.04-arm,
+            ubuntu-24.04,
+            ubuntu-24.04-arm,
+            ubuntu-22.04,
+            ubuntu-22.04-arm,
+          ]
         include:
+          - os: ubuntu-26.04
+            codename: resolute
+          - os: ubuntu-26.04-arm
+            codename: resolute-arm
           - os: ubuntu-24.04
             codename: noble
           - os: ubuntu-24.04-arm
@@ -66,7 +78,7 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt-get install -y cmake dh-make devscripts build-essential lintian g++-15
+          sudo apt-get install -y cmake dh-make devscripts build-essential lintian elfutils g++-15
 
       - name: Build and make release
         run: |
@@ -117,12 +129,12 @@ jobs:
     name: Build Nightly App
     strategy:
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [ubuntu-26.04, ubuntu-26.04-arm]
         include:
-          - os: ubuntu-24.04
-            codename: noble
-          - os: ubuntu-24.04-arm
-            codename: noble-arm
+          - os: ubuntu-26.04
+            codename: resolute
+          - os: ubuntu-26.04-arm
+            codename: resolute-arm
     runs-on: ${{ matrix.os }}
     if: github.event.inputs.nightly-build == 'true'
     steps:
@@ -147,7 +159,7 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt-get install -y cmake dh-make devscripts build-essential lintian g++-15
+          sudo apt-get install -y cmake dh-make devscripts build-essential lintian elfutils g++-15
 
       - name: Build and make nightly release
         run: |
@@ -220,12 +232,12 @@ jobs:
     name: Build Distro App
     strategy:
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [ubuntu-26.04, ubuntu-26.04-arm]
         include:
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             codename: ${{ github.event.inputs.distro-codename }}
             image: ${{ github.event.inputs.distro-os }}
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04-arm
             codename: ${{ github.event.inputs.distro-codename }}-arm
             image: arm64v8/${{ github.event.inputs.distro-os }}
     runs-on: ${{ matrix.os }}
@@ -255,7 +267,7 @@ jobs:
 
       - name: Install build tools
         run: |
-          DEBIAN_FRONTEND=noninteractive apt-get install -y cmake dh-make devscripts build-essential lintian g++-15 wget rpm pkg-config
+          DEBIAN_FRONTEND=noninteractive apt-get install -y cmake dh-make devscripts build-essential lintian elfutils g++-15 wget rpm pkg-config
 
       - name: Build and make ${{ github.event.inputs.distro-os }} ${{ matrix.codename }} release
         run: |
