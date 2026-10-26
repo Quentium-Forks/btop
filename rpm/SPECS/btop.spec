@@ -1,5 +1,5 @@
 Name:           btop
-Version:        1.4.7
+Version:        1.4.8
 Release:        1%{?dist}
 Summary:        Resource monitor that shows usage and stats for processor, memory, disks, network and processes.
 

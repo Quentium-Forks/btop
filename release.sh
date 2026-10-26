@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=1.4.7
+VERSION=1.4.8
 DIR=btop-$VERSION
 ARCH=$(uname -m)
 ARCH_DPKG=$(dpkg --print-architecture)
