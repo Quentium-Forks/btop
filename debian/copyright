@@ -1,3 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: btop
+Upstream-Contact: Quentin Lienhardt <pro@quentium.fr>
+Source: https://github.com/aristocratos/btop
+
+Files: *
+Copyright: 2021 Aristocratos <jakob@qvantnet.com>
+License: Apache-2.0
 
                                  Apache License
                            Version 2.0, January 2004
