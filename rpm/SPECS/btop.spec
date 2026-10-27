@@ -3,7 +3,7 @@ Version:        1.4.8
 Release:        1%{?dist}
 Summary:        Resource monitor that shows usage and stats for processor, memory, disks, network and processes.
 
-License:        GPLv3
+License:        Apache-2.0
 URL:            https://github.com/Quentium-Forks/btop
 Source0:        %{name}-%{version}.tar.gz
 
