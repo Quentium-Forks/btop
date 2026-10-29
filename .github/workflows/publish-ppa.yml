@@ -129,12 +129,12 @@ jobs:
     name: Build Nightly App
     strategy:
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [ubuntu-26.04, ubuntu-26.04-arm]
         include:
-          - os: ubuntu-24.04
-            codename: noble
-          - os: ubuntu-24.04-arm
-            codename: noble-arm
+          - os: ubuntu-26.04
+            codename: resolute
+          - os: ubuntu-26.04-arm
+            codename: resolute-arm
     runs-on: ${{ matrix.os }}
     if: github.event.inputs.nightly-build == 'true'
     steps:
